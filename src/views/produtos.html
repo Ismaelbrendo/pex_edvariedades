@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Produtos - Ed Variedades</title>
+  <!-- Mesmos links CSS do dashboard -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/styles.css">
+  
+</head>
+    <style>
+        .product-thumb {
+        width: 60px;
+        height: 60px;
+        object-fit: cover; /* Garante que a imagem preencha o quadrado sem distorcer */
+        border-radius: 8px; /* Cantos levemente arredondados */
+        border: 1px solid #dee2e6; /* Borda sutil opcional */
+}
+
+    </style>
+<body>
+
+
+  <nav class="sidebar">
+    <div class="logo">
+      <i class="bi bi-box-seam me-2 d-md-none"></i> <!-- Ícone só mobile -->
+      ED <span>VARIEDADES</span>
+    </div>
+    <div class="nav flex-column nav-pills mt-3">
+      <a href="/dashboard" class="nav-link active">
+        <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+      </a>
+      <a href="/produtos" class="nav-link">
+        <i class="bi bi-bag"></i> <span>Produtos</span>
+      </a>
+      <a href="/vendas" class="nav-link">
+        <i class="bi bi-receipt"></i> <span>Vendas</span>
+      </a>
+      <a href="/estoque" class="nav-link">
+        <i class="bi bi-list-check"></i> <span>Estoque</span>
+      </a>
+      <div class="mt-auto mb-4">
+        <a href="/" class="nav-link text-danger">
+          <i class="bi bi-box-arrow-right"></i> <span>Sair</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="header">
+      <h2 class="fw-bold m-0">Product Stock</h2>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalProduto">
+        <i class="bi bi-plus-lg"></i> Novo Produto
+      </button>
+    </div>
+
+    <!-- Tabela -->
+    <div class="table-card">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr class="text-muted small text-uppercase">
+            <th class="fw-semibold">Imagem</th>
+            <th class="fw-semibold">Nome do Produto</th>
+            <th class="fw-semibold">Categoria</th>
+            <th class="fw-semibold">Preço</th>
+            <th class="fw-semibold">Peças</th>
+            <th class="fw-semibold text-end">Ação</th>
+          </tr>
+        </thead>
+        <tbody id="listaProdutos">
+          <!-- JS vai preencher aqui -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal Cadastro -->
+  <div class="modal fade" id="modalProduto" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 id="btnNovoProduto" class="modal-title">Novo Produto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            
+          <form id="formProduto">
+            <div class="mb-3">
+              <label class="form-label">Nome</label>
+              <input type="text" name="nome" class="form-control" required>
+            </div>
+            <div class="row">
+              <div class="col-6 mb-3">
+                <label class="form-label">Categoria</label>
+                <select name="categoria" class="form-select">
+                  <option>Decoração</option>
+                  <option>Flores</option>
+                  <option>Vidros</option>
+                </select>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">URL da Imagem</label>
+                <input type="url" name="imagem" class="form-control" placeholder="http://...">
+              </div>
+
+              <div class="col-6 mb-3">
+                <label class="form-label">Preço (R$)</label>
+                <input type="number" name="preco" step="0.01" class="form-control" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Estoque Inicial</label>
+              <input type="number" name="estoque" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Salvar Produto</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let produtoEditandoId = null;
+    // Script simples para carregar produtos
+    // Carregar Produtos
+    async function carregarProdutos() {
+      const res = await fetch('/api/produtos');
+      const produtos = await res.json();
+      const tbody = document.getElementById('listaProdutos');
+      tbody.innerHTML = produtos.map(p => `
+        <tr>
+          <td>
+            <img src="${p.imagem}" class="product-thumb" alt="Foto" onerror="this.src='https://placehold.co/50'">
+          </td>
+          <td class="fw-bold text-dark">${p.nome}</td>
+          <td>${p.categoria || '-'}</td>
+          <td>R$ ${p.preco_venda}</td>
+          <td>${p.estoque}</td>
+          <td class="text-end">
+            <div class="d-flex justify-content-end gap-2">
+              <button class="action-btn" onclick='abrirModalEditar(${JSON.stringify(p)})'><i class="bi bi-pencil"></i></button>
+              <button class="action-btn delete" onclick="excluirProduto(${p.id})"><i class="bi bi-trash"></i></button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Excluir Produto
+    async function excluirProduto(id) {
+      if(confirm('Tem certeza que deseja excluir?')) {
+        await fetch(`/api/produtos/${id}`, { method: 'DELETE' });
+        carregarProdutos(); // Recarrega a lista
+      }
+    }
+
+    // Abrir Modal para EDIÇÃO
+    function abrirModalEditar(p) {
+      produtoEditandoId = p.id;
+      document.querySelector('#modalProduto .modal-title').innerText = 'Editar Produto';
+      
+      // Preencher campos
+      const form = document.getElementById('formProduto');
+      form.nome.value = p.nome;
+      form.categoria.value = p.categoria;
+      form.preco.value = p.preco_venda;
+      form.estoque.value = p.estoque;
+      form.imagem.value = p.imagem || ''; // <--- Novo campo imagem
+      
+      new bootstrap.Modal(document.getElementById('modalProduto')).show();
+    }
+
+    // Abrir Modal para NOVO (limpa campos)
+    document.getElementById('btnNovoProduto').addEventListener('click', () => {
+      produtoEditandoId = null;
+      document.querySelector('#modalProduto .modal-title').innerText = 'Novo Produto';
+      document.getElementById('formProduto').reset();
+    });
+
+    // Salvar (Criar ou Editar)
+    document.getElementById('formProduto').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const dados = Object.fromEntries(new FormData(e.target));
+      
+      const metodo = produtoEditandoId ? 'PUT' : 'POST';
+      const url = produtoEditandoId ? `/api/produtos/${produtoEditandoId}` : '/api/produtos';
+
+      await fetch(url, {
+        method: metodo,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
+      });
+      
+      location.reload();
+    });
+
+    carregarProdutos();
+  </script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estoque - Ed Variedades</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+  <!-- Sidebar (Igual às outras páginas) -->
+  <nav class="sidebar">
+    <div class="logo">ED <span>VARIEDADES</span></div>
+    <div class="nav flex-column nav-pills mt-3">
+      <a href="/dashboard" class="nav-link"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a>
+      <a href="/produtos" class="nav-link"><i class="bi bi-bag"></i> <span>Produtos</span></a>
+      <a href="/vendas" class="nav-link"><i class="bi bi-receipt"></i> <span>Vendas</span></a>
+      <a href="/estoque" class="nav-link active"><i class="bi bi-list-check"></i> <span>Estoque</span></a>
+      <div class="mt-auto mb-4">
+        <a href="/" class="nav-link text-danger"><i class="bi bi-box-arrow-right"></i> <span>Sair</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Conteúdo -->
+  <main class="main-content">
+    <div class="header-bar">
+      <h2 class="h4 fw-bold mb-0 text-dark">Controle de Estoque</h2>
+    </div>
+
+    <div class="table-container">
+      <table class="table table-custom table-hover">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th>Categoria</th>
+            <th>Qtd. Atual</th>
+            <th>Status</th>
+            <th class="text-end">Ação</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaEstoque">
+          <!-- JS Preenche aqui -->
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Modal Repor Estoque -->
+  <div class="modal fade" id="modalRepor" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header border-0">
+          <h6 class="modal-title fw-bold">Repor Estoque</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p id="nomeProdutoRepor" class="mb-2 text-muted small"></p>
+          <form id="formRepor">
+            <input type="hidden" name="id" id="idProdutoRepor">
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Qtd. a Adicionar</label>
+              <input type="number" name="quantidade" class="form-control" min="1" value="1" required>
+            </div>
+            <button type="submit" class="btn btn-primary-custom w-100">Salvar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    async function carregarEstoque() {
+      const res = await fetch('/api/estoque');
+      const produtos = await res.json();
+      
+      const tbody = document.getElementById('tabelaEstoque');
+      tbody.innerHTML = produtos.map(p => `
+        <tr>
+          <td class="fw-bold text-dark">${p.nome}</td>
+          <td class="text-muted">${p.categoria || '-'}</td>
+          <td class="fs-5 fw-bold">${p.estoque}</td>
+          <td><span class="badge bg-${p.corStatus} bg-opacity-10 text-${p.corStatus} px-3 py-2 rounded-pill">${p.status}</span></td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-primary" onclick="abrirModalRepor(${p.id}, '${p.nome}')">
+              <i class="bi bi-plus-lg"></i> Repor
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Abrir Modal
+    function abrirModalRepor(id, nome) {
+      document.getElementById('idProdutoRepor').value = id;
+      document.getElementById('nomeProdutoRepor').innerText = `Produto: ${nome}`;
+      new bootstrap.Modal(document.getElementById('modalRepor')).show();
+    }
+
+    // Salvar Reposição
+    document.getElementById('formRepor').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const dados = Object.fromEntries(new FormData(e.target));
+      
+      const res = await fetch('/api/estoque/repor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
+      });
+
+      if (res.ok) {
+        location.reload();
+      } else {
+        alert('Erro ao atualizar estoque');
+      }
+    });
+
+    carregarEstoque();
+  </script>
+</body>
+</html>
