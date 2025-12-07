@@ -116,21 +116,49 @@
   <script>
     // Carregar vendas
     async function carregarVendas() {
-      const res = await fetch('/api/vendas');
-      const vendas = await res.json();
-      const tbody = document.getElementById('listaVendas');
-      tbody.innerHTML = vendas.map(v => `
-        <tr>
-          <td>#${v.id}</td>
-          <td>${new Date(v.data).toLocaleDateString()}</td>
-          <td class="fw-bold text-dark">${v.produto_nome}</td>
-          <td>${v.quantidade}</td>
-          <td class="text-success fw-bold">R$ ${v.valor_total.toFixed(2)}</td>
-          <td><span class="badge bg-light text-dark border">${v.forma_pagamento}</span></td>
-          <td><span class="badge bg-success bg-opacity-10 text-success">Concluído</span></td>
-        </tr>
-      `).join('');
+    try {
+        const res = await fetch('/api/vendas');
+        const vendas = await res.json();
+        
+        // Verifica se o ID da tabela está certo (as vezes é 'listaVendas', as vezes querySelector)
+        // Se seu HTML tem <tbody id="listaVendas">, use getElementById
+        const tbody = document.getElementById('listaVendas') || document.querySelector('table tbody');
+        
+        if (!tbody) {
+            console.error("Erro: Tabela de vendas não encontrada no HTML");
+            return;
+        }
+
+        tbody.innerHTML = vendas.map(v => {
+            // TRATAMENTO DE DADOS (Para evitar NaN/Undefined)
+            
+            // 1. Data: Tenta 'data_venda', se não tiver tenta 'data', se não data atual
+            const dataBruta = v.data_venda || v.data || new Date();
+            const dataFormatada = new Date(dataBruta).toLocaleDateString('pt-BR');
+
+            // 2. Pagamento: Tenta 'metodo_pagamento', se não 'forma_pagamento'
+            const pagamento = v.metodo_pagamento || v.forma_pagamento || 'Não informado';
+
+            // 3. Total: Garante que é número
+            const totalValor = Number(v.total || v.valor_total || 0);
+
+            return `
+            <tr>
+                <td>#${v.id}</td>
+                <td>${dataFormatada}</td> <!-- DATA -->
+                <td class="fw-bold text-dark">${v.produto_nome || 'Produto Removido'}</td>
+                <td>${v.quantidade}</td>
+                <td class="text-success fw-bold">R$ ${totalValor.toFixed(2)}</td> <!-- TOTAL -->
+                <td><span class="badge bg-light text-dark border">${pagamento}</span></td> <!-- PAGAMENTO -->
+                <td><span class="badge bg-success bg-opacity-10 text-success">Concluído</span></td>
+            </tr>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error("Erro fatal ao carregar vendas:", err);
     }
+}
+
 
     // Carregar produtos no select
     async function carregarProdutosSelect() {

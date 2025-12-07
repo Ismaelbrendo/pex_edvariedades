@@ -1,0 +1,4 @@
+node_modules
+.env
+edvariedades.db
+package-lock.json

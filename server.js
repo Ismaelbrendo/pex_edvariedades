@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
@@ -8,12 +9,17 @@ const vendasRouter = require('./src/routes/vendas');
 const dashboardRouter = require('./src/routes/dashboard');
 const estoqueRouter = require('./src/routes/estoque');
 
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const SESSION_SECRET = process.env.SESSION_SECRET;
+
+
 
 // Middleware para JSON e formulários
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
-  secret: 'segredo-ed-variedades', // Chave para assinar a sessão
+  secret: SESSION_SECRET, // Chave para assinar a sessão
   resave: false,
   saveUninitialized: true,
   cookie: { secure: false } // 'true' só se tiver HTTPS
@@ -47,7 +53,7 @@ app.post('/api/login', (req, res) => {
   
   // Login simples fixo (para o PEX é suficiente)
   // Em produção real, buscaria do banco com hash
-  if (email === 'admin@edvariedades.com' && senha === 'admin123') {
+  if (email === ADMIN_EMAIL && senha === ADMIN_PASSWORD) {
     req.session.usuarioLogado = true;
     res.json({ sucesso: true });
   } else {
