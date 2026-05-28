@@ -60,7 +60,9 @@ app.post('/api/login', (req, res) => {
     res.status(401).json({ sucesso: false, mensagem: 'Email ou senha incorretos' });
   }
 });
-
+app.get('/catalogo', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src', 'views', 'catalogo.html')); // Ajuste o caminho se sua pasta view for diferente
+});
 // 4. Rota de Logout
 app.get('/logout', (req, res) => {
   req.session.destroy();
@@ -68,8 +70,8 @@ app.get('/logout', (req, res) => {
 });
 // A página de login (/) NÃO tem proteção
 app.get('/', (req, res) => {
-  if (req.session.usuarioLogado) return res.redirect('/dashboard');
-  res.sendFile(path.join(__dirname, 'src', 'views', 'login.html'));
+  if (req.session.usuarioLogado) return res.redirect('/catalogo');
+  res.sendFile(path.join(__dirname, 'src', 'views', 'catalogo.html'));
 });
 
 // As outras rotas ganham o 'protegerRota'
